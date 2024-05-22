@@ -1,3 +1,31 @@
+# catch-bash
+
+geography game with fun animations and interactivity.
+
+- `react-simple-maps` for world data map
+- openai api speech bubbles for bash
+- animation library
+
+## logic
+
+1. start screen with introduction and start button.
+2. world map with input box below.
+3. character jumps between border countries.
+4. takes flights, skipping border; buys player time.
+5. takes ship, skipping border; buys player time.
+6. path of character marks countries gray.
+7. path of player on character path marks countries blue.
+8. current country of player pulses in green.
+9. win the game by naming country while character in it.
+
+## state
+
+- `countries` ***dict*** - { *country*: { guessed: *bool*, player: *bool*, character: *bool*, border: *list* } }
+
+## handles
+
+`handleStart` `handleGuess`
+
 This is a [Next.js](https://nextjs.org/) project bootstrapped with [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app).
 
 ## Getting Started
