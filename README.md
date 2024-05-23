@@ -2,10 +2,6 @@
 
 geography game with fun animations and interactivity.
 
-- `react-simple-maps` for world data map
-- openai api speech bubbles for bash
-- animation library
-
 ## logic
 
 1. start screen with introduction and start button.

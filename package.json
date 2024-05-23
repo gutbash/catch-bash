@@ -9,7 +9,12 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@react-google-maps/api": "^2.19.3",
+    "@svgr/webpack": "^8.1.0",
+    "@vis.gl/react-google-maps": "^1.0.0",
     "antd": "^5.12.7",
+    "framer-motion": "^11.2.6",
+    "gasp": "^0.0.2",
     "leaflet": "^1.9.4",
     "next": "14.0.4",
     "react": "^18.2.0",

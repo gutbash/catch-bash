@@ -5,7 +5,7 @@ const { Title } = Typography;
 
 const AppTitle = () => {
     return (
-        <Title className='title' >Catch Bash</Title>
+        <Title className='title' >Catch Bash!</Title>
     );
 };
 

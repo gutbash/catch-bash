@@ -1,0 +1,4 @@
+/* Add this CSS for animation */
+.advanced-marker {
+    transition: transform 0.5s ease-in-out;
+}
