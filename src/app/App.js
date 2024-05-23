@@ -1,10 +1,11 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Button, Flex, Input, message } from 'antd';
+import { Button, Flex, Input, message, Result } from 'antd';
 import countriesData from './data/countries.json';
 import { APIProvider, Map, useMap, AdvancedMarker } from '@vis.gl/react-google-maps';
 import Title from './components/Title';
 import RunningMarkerSVG from './assets/running-marker.svg';
 import ChasingMarkerSVG from './assets/chasing-marker.svg';
+import EarthSVG from './assets/earth.svg';
 
 const WorldMap = () => {
     const [isGameStarted, setIsGameStarted] = useState(false);
@@ -17,21 +18,6 @@ const WorldMap = () => {
 
     const GOOGLE_MAPS_API_KEY = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
     const MAP_ID = process.env.NEXT_PUBLIC_MAP_ID;
-
-    const map = useMap();
-
-    const updateBounds = useCallback(() => {
-        if (map && currentRunningCountry && currentChasingCountry) {
-            const bounds = new google.maps.LatLngBounds();
-            bounds.extend(new google.maps.LatLng(currentRunningCountry.latlng[0], currentRunningCountry.latlng[1]));
-            bounds.extend(new google.maps.LatLng(currentChasingCountry.latlng[0], currentChasingCountry.latlng[1]));
-            map.fitBounds(bounds);
-        }
-    }, [map, currentRunningCountry, currentChasingCountry]);
-
-    useEffect(() => {
-        updateBounds();
-    }, [updateBounds]);
 
     const handleStart = () => {
         const randomIndex = Math.floor(Math.random() * countriesData.length);
@@ -112,45 +98,60 @@ const WorldMap = () => {
         lng: 0
     };
 
-    const RunningCountryMarker = () => {
+    const MapComponent = ({ currentRunningCountry, currentChasingCountry }) => {
         const map = useMap();
 
-        return currentRunningCountry ? (
-            <AdvancedMarker
-                position={{ lat: currentRunningCountry.latlng[0], lng: currentRunningCountry.latlng[1] }}
-                title={currentRunningCountry.name.common}
-                map={map}
-            >
-                <RunningMarkerSVG width={20} height={20} />
-            </AdvancedMarker>
-        ) : null;
-    };
+        const updateBounds = useCallback(() => {
+            if (map && currentRunningCountry && currentChasingCountry) {
+                const bounds = new google.maps.LatLngBounds();
+                bounds.extend(new google.maps.LatLng(currentRunningCountry.latlng[0], currentRunningCountry.latlng[1]));
+                bounds.extend(new google.maps.LatLng(currentChasingCountry.latlng[0], currentChasingCountry.latlng[1]));
+                map.fitBounds(bounds);
+            }
+        }, [map, currentRunningCountry, currentChasingCountry]);
 
-    const ChasingCountryMarker = () => {
-        const map = useMap();
+        useEffect(() => {
+            updateBounds();
+        }, [updateBounds]);
 
-        return currentChasingCountry ? (
-            <AdvancedMarker
-                position={{ lat: currentChasingCountry.latlng[0], lng: currentChasingCountry.latlng[1] }}
-                title={currentChasingCountry.name.common}
-                map={map}
-            >
-                <ChasingMarkerSVG width={20} height={20} />
-            </AdvancedMarker>
-        ) : null;
+        return (
+            <>
+                {currentRunningCountry && (
+                    <AdvancedMarker
+                        position={{ lat: currentRunningCountry.latlng[0], lng: currentRunningCountry.latlng[1] }}
+                        title={currentRunningCountry.name.common}
+                        map={map}
+                    >
+                        <RunningMarkerSVG width={20} height={20} />
+                    </AdvancedMarker>
+                )}
+                {currentChasingCountry && (
+                    <AdvancedMarker
+                        position={{ lat: currentChasingCountry.latlng[0], lng: currentChasingCountry.latlng[1] }}
+                        title={currentChasingCountry.name.common}
+                        map={map}
+                    >
+                        <ChasingMarkerSVG width={20} height={20} />
+                    </AdvancedMarker>
+                )}
+            </>
+        );
     };
 
     return (
         <>
             {contextHolder}
             {!isGameStarted ? (
-                <Flex gap="small" wrap="wrap" justify='center'>
-                <div style={{ textAlign: 'center', padding: '50px' }}>
-                    <h1>Welcome to Catch Bash</h1>
-                    <p>Test your geography skills in this fun and interactive game!</p>
-                    <Button type="primary" onClick={handleStart}>Start Game</Button>
+                <div style={{ textAlign: 'center', padding: '50px', color: 'black' }}>
+                    <Result
+                        icon={<EarthSVG width={100} height={100} />}
+                        title="Welcome to Catch Bash!"
+                    />
+                    <p><RunningMarkerSVG width={20} height={20} /> Bash is running away.</p>
+                    <p><ChasingMarkerSVG width={20} height={20} /> You are chasing him.</p>
+                    <p>Guess the country where Bash is hiding to catch him!</p>
+                    <Button type="primary" onClick={handleStart}>Start</Button>
                 </div>
-                </Flex>
             ) : (
                 <div style={{ padding: '10vw' }}>
                     <Flex gap="small" wrap="wrap" justify='left'>
@@ -169,8 +170,7 @@ const WorldMap = () => {
                                 disableDefaultUI={false}
                                 mapId={MAP_ID}
                             >
-                                <RunningCountryMarker />
-                                <ChasingCountryMarker />
+                                <MapComponent currentRunningCountry={currentRunningCountry} currentChasingCountry={currentChasingCountry} />
                             </Map>
                         </Flex>
                     </APIProvider>
