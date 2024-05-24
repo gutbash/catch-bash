@@ -145,7 +145,7 @@ const WorldMap = () => {
                         setLog(prev => [{ player: 'Bash', country: 'Nowhere', region: 'Nowhere' }, ...prev].slice(0, 3));
                     }
                 }
-            }, 20000);
+            }, 15000);
 
             return () => clearInterval(interval);
         }
