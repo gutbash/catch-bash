@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Button, Flex, Input, message, Space, Progress, List } from 'antd';
+import { Button, Flex, Input, message, Space, Progress, List, Layout } from 'antd';
 import countriesData from './data/countries.json';
 import { APIProvider, Map, useMap, AdvancedMarker } from '@vis.gl/react-google-maps';
 import RunningMarkerSVG from './assets/running-marker.svg';
@@ -47,8 +47,8 @@ const WorldMap = () => {
 
     const animateMarker = (map, startCoords, endCoords, setMarkerCoords, callback) => {
         const distance = haversineDistance(startCoords, endCoords);
-        const duration = distance * 1; // Adjust this multiplier for desired speed
-        const steps = Math.max(20, Math.min(200, duration / 100)); // Ensure a reasonable number of steps
+        const duration = distance * 0.75; // Adjust this multiplier for desired speed
+        const steps = Math.max(20, Math.min(200, duration / 300)); // Ensure a reasonable number of steps
         const stepDuration = duration / steps;
     
         let step = 0;
@@ -308,7 +308,7 @@ const WorldMap = () => {
                     <Button style={{ width: '15em', marginTop: '1.5vh' }} size='middle' type="primary" onClick={handleStart}>Start</Button>
                 </div>
             ) : (
-                <div style={{ paddingLeft: '10vw', paddingRight: '10vw', paddingTop: '10vh', paddingBottom: '10vh'}}>
+                <Layout style={{ textAlign: 'left', padding: '5vh', background: 'white' }}>
                     <Earth48SVG width={48} height={48} style={{ marginBottom: '-1vh' }} />
                     <Title>Catch Bash!</Title>
                     <APIProvider
@@ -354,7 +354,7 @@ const WorldMap = () => {
                         )}
                     />
                     </Space>
-                </div>
+                </Layout>
             )}
         </>
     );
