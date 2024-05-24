@@ -308,7 +308,7 @@ const WorldMap = () => {
                     <Button style={{ width: '15em', marginTop: '1.5vh' }} size='middle' type="primary" onClick={handleStart}>Start</Button>
                 </div>
             ) : (
-                <div style={{ paddingLeft: '10vw', paddingRight: '10vw', paddingTop: '10vh'}}>
+                <div style={{ paddingLeft: '10vw', paddingRight: '10vw', paddingTop: '10vh', paddingBottom: '10vh'}}>
                     <Earth48SVG width={48} height={48} style={{ marginBottom: '-1vh' }} />
                     <Title>Catch Bash!</Title>
                     <APIProvider
