@@ -184,41 +184,31 @@ const WorldMap = () => {
     const handleGuessSubmit = () => {
         if (isAnimating.chasing) return;
 
-        if (currentRunningCountry && playerGuess.toLowerCase() === currentRunningCountry.name.common.toLowerCase()) {
-            messageApi.success('Congratulations! You caught Bash!');
-            setIsGameStarted(false);
-            setCurrentRunningCountry(null);
-            setRunningCountries([]);
-            setChasingCountries([]);
-            setPlayerGuess('');
-            setProgress(0);
-        } else {
-            const guessedCountry = countriesData.find(country => country.name.common.toLowerCase() === playerGuess.toLowerCase());
-            if (guessedCountry) {
-                if (currentChasingCountry.borders.includes(guessedCountry.cca3)) {
-                    // Teleport without animation
-                    setCurrentChasingCountry(guessedCountry);
-                    setChasingCountries(prev => [...prev, guessedCountry]);
-                    setMarkerPosition(prev => ({ ...prev, chasing: { lat: guessedCountry.latlng[0], lng: guessedCountry.latlng[1] } }));
-                    setLog(prev => [{ player: 'You', country: `${playerGuess}`, region: `${guessedCountry.region}` }, ...prev].slice(0, 3));
-                } else {
-                    setIsAnimating(prev => ({ ...prev, chasing: true }));
-                    animateMarker(
-                        mapInstance,
-                        { lat: currentChasingCountry.latlng[0], lng: currentChasingCountry.latlng[1] },
-                        { lat: guessedCountry.latlng[0], lng: guessedCountry.latlng[1] },
-                        (coords) => setMarkerPosition(prev => ({ ...prev, chasing: { lat: coords.lat, lng: coords.lng } })),
-                        () => {
-                            setCurrentChasingCountry(guessedCountry);
-                            setChasingCountries(prev => [...prev, guessedCountry]);
-                            setLog(prev => [{ player: 'You', country: `${playerGuess}`, region: `${guessedCountry.region}` }, ...prev].slice(0, 3));
-                            setIsAnimating(prev => ({ ...prev, chasing: false }));
-                        }
-                    );
-                }
+        const guessedCountry = countriesData.find(country => country.name.common.toLowerCase() === playerGuess.toLowerCase());
+        if (guessedCountry) {
+            if (currentChasingCountry.borders.includes(guessedCountry.cca3)) {
+                // Teleport without animation
+                setCurrentChasingCountry(guessedCountry);
+                setChasingCountries(prev => [...prev, guessedCountry]);
+                setMarkerPosition(prev => ({ ...prev, chasing: { lat: guessedCountry.latlng[0], lng: guessedCountry.latlng[1] } }));
+                setLog(prev => [{ player: 'You', country: `${playerGuess}`, region: `${guessedCountry.region}` }, ...prev].slice(0, 3));
             } else {
-                messageApi.error('Not a country. Try again!');
+                setIsAnimating(prev => ({ ...prev, chasing: true }));
+                animateMarker(
+                    mapInstance,
+                    { lat: currentChasingCountry.latlng[0], lng: currentChasingCountry.latlng[1] },
+                    { lat: guessedCountry.latlng[0], lng: guessedCountry.latlng[1] },
+                    (coords) => setMarkerPosition(prev => ({ ...prev, chasing: { lat: coords.lat, lng: coords.lng } })),
+                    () => {
+                        setCurrentChasingCountry(guessedCountry);
+                        setChasingCountries(prev => [...prev, guessedCountry]);
+                        setLog(prev => [{ player: 'You', country: `${playerGuess}`, region: `${guessedCountry.region}` }, ...prev].slice(0, 3));
+                        setIsAnimating(prev => ({ ...prev, chasing: false }));
+                    }
+                );
             }
+        } else {
+            messageApi.error('Not a country. Try again!');
         }
     };
 
