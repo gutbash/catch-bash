@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { Button, Flex, Input, message, Space, Progress, List, Layout } from 'antd';
 import countriesData from './data/countries.json';
 import { APIProvider, Map, useMap, AdvancedMarker } from '@vis.gl/react-google-maps';
@@ -38,6 +38,9 @@ const WorldMap = () => {
     const [markerPosition, setMarkerPosition] = useState({ running: null, chasing: null });
     const [mapInstance, setMapInstance] = useState(null);
 
+    const runningMarkerRef = useRef(null);
+    const chasingMarkerRef = useRef(null);
+
     const GOOGLE_MAPS_API_KEY = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
     const MAP_ID = process.env.NEXT_PUBLIC_MAP_ID;
 
@@ -45,33 +48,38 @@ const WorldMap = () => {
         return coords && !isNaN(coords.lat) && !isNaN(coords.lng);
     };
 
-    const animateMarker = (map, startCoords, endCoords, setMarkerCoords, callback) => {
+    const animateMarker = (startCoords, endCoords, setMarkerCoords, markerType, callback) => {
         const distance = haversineDistance(startCoords, endCoords);
         const duration = distance * 0.75; // Adjust this multiplier for desired speed
         const steps = Math.max(20, Math.min(200, duration / 300)); // Ensure a reasonable number of steps
         const stepDuration = duration / steps;
-    
+
         let step = 0;
         const latStep = (endCoords.lat - startCoords.lat) / steps;
         const lngStep = (endCoords.lng - startCoords.lng) / steps;
-    
-        // Adjust the bounds before the animation starts
-        if (map) {
+
+        if (mapInstance) {
             const bounds = new google.maps.LatLngBounds();
             bounds.extend(new google.maps.LatLng(endCoords.lat, endCoords.lng));
-            map.fitBounds(bounds);
+            mapInstance.fitBounds(bounds);
         }
-    
+
         const interval = setInterval(() => {
             const newLat = startCoords.lat + latStep * step;
             const newLng = startCoords.lng + lngStep * step;
-    
+
             if (step < steps && isValidLatLng({ lat: newLat, lng: newLng })) {
-                setMarkerCoords({ lat: newLat, lng: newLng });
+                setMarkerCoords(prev => ({
+                    ...prev,
+                    [markerType]: { lat: newLat, lng: newLng }
+                }));
                 step += 1;
             } else {
                 clearInterval(interval);
-                setMarkerCoords(endCoords);
+                setMarkerCoords(prev => ({
+                    ...prev,
+                    [markerType]: endCoords
+                }));
                 if (callback) callback();
             }
         }, stepDuration);
@@ -99,7 +107,6 @@ const WorldMap = () => {
         setIsGameStarted(true);
     };
 
-    // Inside useEffect for running country animation
     useEffect(() => {
         if (currentRunningCountry && !isAnimating.running) {
             const interval = setInterval(() => {
@@ -112,7 +119,6 @@ const WorldMap = () => {
                 if (borderCountries.length) {
                     const randomBorderIndex = Math.floor(Math.random() * borderCountries.length);
                     nextCountry = borderCountries[randomBorderIndex];
-                    // Teleport without animation
                     setCurrentRunningCountry(nextCountry);
                     setRunningCountries(prev => [...prev, nextCountry]);
                     setMarkerPosition(prev => ({ ...prev, running: { lat: nextCountry.latlng[0], lng: nextCountry.latlng[1] } }));
@@ -129,10 +135,10 @@ const WorldMap = () => {
                     if (nextCountry) {
                         setIsAnimating(prev => ({ ...prev, running: true }));
                         animateMarker(
-                            mapInstance,
                             { lat: currentRunningCountry.latlng[0], lng: currentRunningCountry.latlng[1] },
                             { lat: nextCountry.latlng[0], lng: nextCountry.latlng[1] },
-                            (coords) => setMarkerPosition(prev => ({ ...prev, running: { lat: coords.lat, lng: coords.lng } })),
+                            setMarkerPosition,
+                            'running',
                             () => {
                                 setCurrentRunningCountry(nextCountry);
                                 setRunningCountries(prev => [...prev, nextCountry]);
@@ -158,12 +164,10 @@ const WorldMap = () => {
                 { lat: currentChasingCountry.latlng[0], lng: currentChasingCountry.latlng[1] }
             );
 
-            // Assuming the maximum distance on Earth is approximately 20,000 km.
             const maxDistance = 20000;
             const progressPercentage = Math.max(0, Math.min(100, 100 - (distance / maxDistance) * 100));
             setProgress(progressPercentage);
 
-            // Check for win condition
             if (progressPercentage >= 100) {
                 messageApi.success('Congratulations! You caught Bash!');
                 setIsGameStarted(false);
@@ -180,14 +184,12 @@ const WorldMap = () => {
         setPlayerGuess(e.target.value);
     };
 
-    // Inside handleGuessSubmit for chasing country animation
     const handleGuessSubmit = () => {
         if (isAnimating.chasing) return;
 
         const guessedCountry = countriesData.find(country => country.name.common.toLowerCase() === playerGuess.toLowerCase());
         if (guessedCountry) {
             if (currentChasingCountry.borders.includes(guessedCountry.cca3)) {
-                // Teleport without animation
                 setCurrentChasingCountry(guessedCountry);
                 setChasingCountries(prev => [...prev, guessedCountry]);
                 setMarkerPosition(prev => ({ ...prev, chasing: { lat: guessedCountry.latlng[0], lng: guessedCountry.latlng[1] } }));
@@ -195,10 +197,10 @@ const WorldMap = () => {
             } else {
                 setIsAnimating(prev => ({ ...prev, chasing: true }));
                 animateMarker(
-                    mapInstance,
                     { lat: currentChasingCountry.latlng[0], lng: currentChasingCountry.latlng[1] },
                     { lat: guessedCountry.latlng[0], lng: guessedCountry.latlng[1] },
-                    (coords) => setMarkerPosition(prev => ({ ...prev, chasing: { lat: coords.lat, lng: coords.lng } })),
+                    setMarkerPosition,
+                    'chasing',
                     () => {
                         setCurrentChasingCountry(guessedCountry);
                         setChasingCountries(prev => [...prev, guessedCountry]);
@@ -223,7 +225,7 @@ const WorldMap = () => {
         lng: 0
     };
 
-    const MapComponent = ({ currentRunningCountry, currentChasingCountry }) => {
+    const MapComponent = useMemo(() => ({ currentRunningCountry, currentChasingCountry }) => {
         const map = useMap();
 
         useEffect(() => {
@@ -237,7 +239,7 @@ const WorldMap = () => {
                 const bounds = new google.maps.LatLngBounds();
                 bounds.extend(new google.maps.LatLng(currentRunningCountry.latlng[0], currentRunningCountry.latlng[1]));
                 bounds.extend(new google.maps.LatLng(currentChasingCountry.latlng[0], currentChasingCountry.latlng[1]));
-                map.fitBounds(bounds);
+                map.fitBounds(bounds, 100);
             }
         }, [map, currentRunningCountry, currentChasingCountry]);
 
@@ -252,6 +254,7 @@ const WorldMap = () => {
                         position={new google.maps.LatLng(markerPosition.running.lat, markerPosition.running.lng)}
                         title={currentRunningCountry.name.common}
                         map={map}
+                        ref={runningMarkerRef}
                     >
                         {isAnimating.running && !currentRunningCountry.borders.includes(currentChasingCountry?.cca3) ? (
                             <AirplaneSVG
@@ -269,6 +272,7 @@ const WorldMap = () => {
                         position={new google.maps.LatLng(markerPosition.chasing.lat, markerPosition.chasing.lng)}
                         title={currentChasingCountry.name.common}
                         map={map}
+                        ref={chasingMarkerRef}
                     >
                         {isAnimating.chasing && !currentChasingCountry.borders.includes(currentRunningCountry?.cca3) ? (
                             <AirplaneSVG
@@ -283,7 +287,7 @@ const WorldMap = () => {
                 )}
             </>
         );
-    };
+    }, [currentRunningCountry, currentChasingCountry, isAnimating, markerPosition]);
 
     return (
         <>
@@ -291,7 +295,7 @@ const WorldMap = () => {
             {!isGameStarted ? (
                 <div style={{ textAlign: 'center', padding: '10vh', color: 'black' }}>
                     <EarthSVG width={256} height={256} />
-                    <Title>Welcome to Catch Bash!</Title>
+                    <Title>Catch Bash!</Title>
                     <p><RunningMarkerSVG width={20} height={20} /> Bash is running away.</p>
                     <p><ChasingMarkerSVG width={20} height={20} /> You are chasing him.</p>
                     <Title level={5} >Guess the country where Bash is hiding to catch him!</Title>
